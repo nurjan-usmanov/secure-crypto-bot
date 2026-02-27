@@ -1,16 +1,21 @@
 import asyncio
+import logging
 from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
-from bot.handlers import common, crypto # Бұларды келесі қадамда жазамыз
+from bot.handlers import common, crypto
 
 async def main():
+    # Логтарды қосу (қателерді көру үшін)
+    logging.basicConfig(level=logging.INFO)
+
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
-    # Хэндлерлерді тіркеу
-    # dp.include_router(common.router)
+    # Роутерлерді тіркеу (Тәртіп маңызды!)
+    dp.include_router(common.router)
+    dp.include_router(crypto.router)
     
-    print("Бот іске қосылды...")
+    print("🚀 Бот жұмысқа дайын...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
