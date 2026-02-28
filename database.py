@@ -1,7 +1,6 @@
 import os
 import psycopg2
 from psycopg2 import OperationalError
-from datetime import datetime
 from dotenv import load_dotenv
 
 
@@ -14,12 +13,23 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
     "host": os.getenv("DB_HOST"),
     "port": os.getenv("DB_PORT"),
+    "options": "-c client_encoding=UTF8",
 }
+
+
+def _safe_text(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value.encode("utf-8", errors="replace").decode("utf-8")
+    return str(value)
 
 
 def get_connection():
     try:
-        return psycopg2.connect(**DB_CONFIG)
+        conn = psycopg2.connect(**DB_CONFIG)
+        conn.set_client_encoding("UTF8")
+        return conn
     except OperationalError as e:
         print("❌ Database connection error:", e)
         raise
@@ -32,11 +42,14 @@ def add_user(user_id, username, first_name):
         conn = get_connection()
         cursor = conn.cursor()
 
+        safe_username = _safe_text(username)
+        safe_first_name = _safe_text(first_name)
+
         cursor.execute("""
             INSERT INTO users (user_id, username, first_name, joined_at, last_activity)
             VALUES (%s, %s, %s, NOW(), NOW())
             ON CONFLICT (user_id) DO NOTHING;
-        """, (user_id, username, first_name))
+        """, (user_id, safe_username, safe_first_name))
 
         conn.commit()
         cursor.close()
